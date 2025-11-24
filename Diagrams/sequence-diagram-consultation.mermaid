@@ -1,0 +1,90 @@
+%% MedFlow - Sequence Diagram: Doctor Consultation & Prescription
+%% Shows the interaction flow when a doctor conducts a consultation and creates a prescription
+
+sequenceDiagram
+    actor Doctor
+    participant Dashboard as Doctor Dashboard
+    participant Auth as Auth Service
+    participant API as API Layer
+    participant DB as Database
+    participant PDF as PDF Generator
+    participant Storage as File Storage
+    participant Email as Email Service
+    participant Patient
+
+    Doctor->>Dashboard: View today's appointments
+    Dashboard->>Auth: Verify doctor session
+    Auth-->>Dashboard: Return session
+    
+    Dashboard->>API: GET /api/appointments?date=today
+    API->>DB: Query appointments (filtered by doctorId, clinicId)
+    DB-->>API: Return appointments list
+    API-->>Dashboard: Return appointments
+    Dashboard-->>Doctor: Display appointments
+
+    Doctor->>Dashboard: Select patient appointment
+    Dashboard->>API: GET /api/patients/{id}
+    API->>DB: Query patient details & medical history
+    DB-->>API: Return patient data
+    API-->>Dashboard: Return patient info
+    Dashboard-->>Doctor: Display patient profile
+
+    Doctor->>Dashboard: Start consultation
+    Dashboard->>API: POST /api/consultations
+    Note over API,DB: Create consultation record
+    API->>DB: Create consultation
+    DB-->>API: Return consultation ID
+    
+    API->>DB: Update appointment status to IN_PROGRESS
+    DB-->>API: Confirm update
+    API-->>Dashboard: Return consultation data
+    Dashboard-->>Doctor: Open consultation form
+
+    Doctor->>Dashboard: Enter vital signs
+    Dashboard->>API: PATCH /api/consultations/{id}
+    API->>DB: Update consultation (vitalSigns)
+    DB-->>API: Confirm update
+    API-->>Dashboard: Return updated data
+
+    Doctor->>Dashboard: Enter diagnosis & notes
+    Dashboard->>API: PATCH /api/consultations/{id}
+    API->>DB: Update consultation (diagnosis, notes)
+    DB-->>API: Confirm update
+    API-->>Dashboard: Return updated data
+
+    Doctor->>Dashboard: Create prescription
+    Dashboard->>API: POST /api/prescriptions
+    
+    API->>DB: Create prescription record
+    Note over API,DB: Store medications as JSON
+    DB-->>API: Return prescription ID
+    
+    API->>PDF: Generate prescription PDF
+    Note over PDF: Include patient info, medications,<br/>doctor signature, clinic logo
+    PDF-->>API: Return PDF buffer
+    
+    API->>Storage: Upload PDF
+    Storage-->>API: Return file URL
+    
+    API->>DB: Update prescription with PDF URL
+    DB-->>API: Confirm update
+    
+    API->>Email: Send prescription to patient
+    Email->>Patient: Email with PDF attachment
+    Email-->>API: Confirm sent
+    
+    API-->>Dashboard: Return prescription data
+    Dashboard-->>Doctor: Display success message
+
+    Doctor->>Dashboard: Complete consultation
+    Dashboard->>API: PATCH /api/consultations/{id}
+    API->>DB: Update consultation status to COMPLETED
+    DB-->>API: Confirm update
+    
+    API->>DB: Update appointment status to COMPLETED
+    DB-->>API: Confirm update
+    
+    API-->>Dashboard: Return success
+    Dashboard-->>Doctor: Show completion confirmation
+
+    Note over Doctor,Patient: Patient can now view prescription<br/>in their portal

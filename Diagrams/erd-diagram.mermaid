@@ -1,0 +1,208 @@
+%% MedFlow - Entity Relationship Diagram (ERD)
+%% Shows the database schema with relationships, cardinality, and key attributes
+
+erDiagram
+    CLINIC ||--o{ USER : "has"
+    CLINIC ||--o{ PATIENT : "manages"
+    CLINIC ||--o{ DOCTOR : "employs"
+    CLINIC ||--o{ SERVICE : "offers"
+    CLINIC ||--o{ APPOINTMENT : "schedules"
+    CLINIC ||--o{ CONSULTATION : "conducts"
+    CLINIC ||--o{ PRESCRIPTION : "issues"
+    CLINIC ||--o{ INVOICE : "generates"
+    CLINIC ||--o{ PAYMENT : "receives"
+
+    USER ||--o| PATIENT : "is"
+    USER ||--o| DOCTOR : "is"
+    USER ||--o{ PASSWORD_RESET_TOKEN : "generates"
+
+    PATIENT ||--o{ APPOINTMENT : "books"
+    PATIENT ||--o{ CONSULTATION : "receives"
+    PATIENT ||--o{ PRESCRIPTION : "receives"
+    PATIENT ||--o{ INVOICE : "owes"
+
+    DOCTOR ||--o{ APPOINTMENT : "attends"
+    DOCTOR ||--o{ CONSULTATION : "conducts"
+    DOCTOR ||--o{ PRESCRIPTION : "writes"
+
+    SERVICE ||--o{ APPOINTMENT : "used_in"
+
+    APPOINTMENT ||--o| CONSULTATION : "leads_to"
+    APPOINTMENT ||--o| INVOICE : "generates"
+
+    CONSULTATION ||--o{ PRESCRIPTION : "generates"
+
+    INVOICE ||--o{ PAYMENT : "receives"
+
+    CLINIC {
+        string id PK
+        string name
+        string address
+        string phone
+        string email
+        string logo
+        string description
+        json settings
+        string subscriptionStatus
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    USER {
+        string id PK
+        string email UK
+        string password
+        enum role
+        string firstName
+        string lastName
+        string phone
+        boolean isActive
+        boolean emailVerified
+        string clinicId FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PATIENT {
+        string id PK
+        string userId FK,UK
+        string clinicId FK
+        datetime dateOfBirth
+        enum gender
+        string bloodType
+        string address
+        string emergencyContact
+        json medicalHistory
+        json insuranceInfo
+        string allergies
+        string chronicConditions
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    DOCTOR {
+        string id PK
+        string userId FK,UK
+        string clinicId FK
+        string specialization
+        string licenseNumber
+        float consultationFee
+        json availability
+        string biography
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    SERVICE {
+        string id PK
+        string clinicId FK
+        string name
+        string description
+        float price
+        int duration
+        enum category
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    APPOINTMENT {
+        string id PK
+        string clinicId FK
+        string patientId FK
+        string doctorId FK
+        string serviceId FK
+        datetime appointmentDate
+        string startTime
+        string endTime
+        enum status
+        string notes
+        string cancellationReason
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    CONSULTATION {
+        string id PK
+        string appointmentId FK,UK
+        string clinicId FK
+        string patientId FK
+        string doctorId FK
+        string chiefComplaint
+        string diagnosis
+        string notes
+        json vitalSigns
+        enum status
+        datetime consultationDate
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PRESCRIPTION {
+        string id PK
+        string consultationId FK
+        string clinicId FK
+        string patientId FK
+        string doctorId FK
+        json medications
+        string instructions
+        datetime prescriptionDate
+        string pdfUrl
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    INVOICE {
+        string id PK
+        string clinicId FK
+        string patientId FK
+        string appointmentId FK,UK
+        string invoiceNumber UK
+        json items
+        float subtotal
+        float tax
+        float discount
+        float total
+        enum status
+        datetime dueDate
+        string notes
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PAYMENT {
+        string id PK
+        string invoiceId FK
+        string clinicId FK
+        float amount
+        enum paymentMethod
+        string stripePaymentIntentId
+        enum status
+        datetime paidAt
+        string transactionReference
+        string notes
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PASSWORD_RESET_TOKEN {
+        string id PK
+        string token UK
+        string userId FK
+        string clinicId FK
+        boolean used
+        datetime expiresAt
+        datetime createdAt
+    }
+
+    INVITE_TOKEN {
+        string id PK
+        string token UK
+        string email
+        enum role
+        string clinicId FK
+        string invitedBy
+        boolean used
+        datetime expiresAt
+        datetime createdAt
+    }

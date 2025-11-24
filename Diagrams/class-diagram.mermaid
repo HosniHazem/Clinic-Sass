@@ -1,0 +1,330 @@
+%% MedFlow - Class Diagram
+%% Shows the main classes, their attributes, methods, and relationships
+
+classDiagram
+    class Clinic {
+        +String id
+        +String name
+        +String address
+        +String phone
+        +String email
+        +String logo
+        +String description
+        +Json settings
+        +String subscriptionStatus
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getUsers()
+        +getPatients()
+        +getDoctors()
+        +updateSettings()
+    }
+
+    class User {
+        +String id
+        +String email
+        +String password
+        +Role role
+        +String firstName
+        +String lastName
+        +String phone
+        +Boolean isActive
+        +Boolean emailVerified
+        +String clinicId
+        +DateTime createdAt
+        +DateTime updatedAt
+        +authenticate()
+        +updateProfile()
+        +resetPassword()
+        +changePassword()
+    }
+
+    class Patient {
+        +String id
+        +String userId
+        +String clinicId
+        +DateTime dateOfBirth
+        +Gender gender
+        +String bloodType
+        +String address
+        +String emergencyContact
+        +Json medicalHistory
+        +Json insuranceInfo
+        +String allergies
+        +String chronicConditions
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getMedicalHistory()
+        +updateMedicalRecord()
+        +getAppointments()
+        +getPrescriptions()
+    }
+
+    class Doctor {
+        +String id
+        +String userId
+        +String clinicId
+        +String specialization
+        +String licenseNumber
+        +Float consultationFee
+        +Json availability
+        +String biography
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getAppointments()
+        +conductConsultation()
+        +createPrescription()
+        +updateAvailability()
+    }
+
+    class Service {
+        +String id
+        +String clinicId
+        +String name
+        +String description
+        +Float price
+        +Int duration
+        +ServiceCategory category
+        +Boolean isActive
+        +DateTime createdAt
+        +DateTime updatedAt
+        +calculatePrice()
+        +updateService()
+    }
+
+    class Appointment {
+        +String id
+        +String clinicId
+        +String patientId
+        +String doctorId
+        +String serviceId
+        +DateTime appointmentDate
+        +String startTime
+        +String endTime
+        +AppointmentStatus status
+        +String notes
+        +String cancellationReason
+        +DateTime createdAt
+        +DateTime updatedAt
+        +schedule()
+        +cancel()
+        +reschedule()
+        +checkIn()
+        +complete()
+    }
+
+    class Consultation {
+        +String id
+        +String appointmentId
+        +String clinicId
+        +String patientId
+        +String doctorId
+        +String chiefComplaint
+        +String diagnosis
+        +String notes
+        +Json vitalSigns
+        +ConsultationStatus status
+        +DateTime consultationDate
+        +DateTime createdAt
+        +DateTime updatedAt
+        +recordVitals()
+        +addDiagnosis()
+        +complete()
+        +generateReport()
+    }
+
+    class Prescription {
+        +String id
+        +String consultationId
+        +String clinicId
+        +String patientId
+        +String doctorId
+        +Json medications
+        +String instructions
+        +DateTime prescriptionDate
+        +String pdfUrl
+        +DateTime createdAt
+        +DateTime updatedAt
+        +addMedication()
+        +generatePDF()
+        +sendToPatient()
+    }
+
+    class Invoice {
+        +String id
+        +String clinicId
+        +String patientId
+        +String appointmentId
+        +String invoiceNumber
+        +Json items
+        +Float subtotal
+        +Float tax
+        +Float discount
+        +Float total
+        +InvoiceStatus status
+        +DateTime dueDate
+        +String notes
+        +DateTime createdAt
+        +DateTime updatedAt
+        +calculateTotal()
+        +addItem()
+        +applyDiscount()
+        +markAsPaid()
+        +sendToPatient()
+    }
+
+    class Payment {
+        +String id
+        +String invoiceId
+        +String clinicId
+        +Float amount
+        +PaymentMethod paymentMethod
+        +String stripePaymentIntentId
+        +PaymentStatus status
+        +DateTime paidAt
+        +String transactionReference
+        +String notes
+        +DateTime createdAt
+        +DateTime updatedAt
+        +processPayment()
+        +refund()
+        +confirm()
+    }
+
+    class PasswordResetToken {
+        +String id
+        +String token
+        +String userId
+        +String clinicId
+        +Boolean used
+        +DateTime expiresAt
+        +DateTime createdAt
+        +validate()
+        +markAsUsed()
+    }
+
+    class InviteToken {
+        +String id
+        +String token
+        +String email
+        +Role role
+        +String clinicId
+        +String invitedBy
+        +Boolean used
+        +DateTime expiresAt
+        +DateTime createdAt
+        +validate()
+        +accept()
+    }
+
+    %% Enumerations
+    class Role {
+        <<enumeration>>
+        ADMIN
+        DOCTOR
+        RECEPTIONIST
+        PATIENT
+    }
+
+    class AppointmentStatus {
+        <<enumeration>>
+        SCHEDULED
+        CONFIRMED
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+        NO_SHOW
+    }
+
+    class ConsultationStatus {
+        <<enumeration>>
+        SCHEDULED
+        COMPLETED
+        CANCELLED
+    }
+
+    class InvoiceStatus {
+        <<enumeration>>
+        PENDING
+        PAID
+        PARTIALLY_PAID
+        CANCELLED
+        OVERDUE
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        COMPLETED
+        FAILED
+        REFUNDED
+    }
+
+    class PaymentMethod {
+        <<enumeration>>
+        CASH
+        CARD
+        STRIPE
+        INSURANCE
+    }
+
+    class Gender {
+        <<enumeration>>
+        MALE
+        FEMALE
+        OTHER
+    }
+
+    class ServiceCategory {
+        <<enumeration>>
+        CONSULTATION
+        PROCEDURE
+        DIAGNOSTIC
+        THERAPY
+        SURGERY
+        OTHER
+    }
+
+    %% Relationships
+    Clinic "1" --> "*" User : has
+    Clinic "1" --> "*" Patient : manages
+    Clinic "1" --> "*" Doctor : employs
+    Clinic "1" --> "*" Service : offers
+    Clinic "1" --> "*" Appointment : schedules
+    Clinic "1" --> "*" Consultation : conducts
+    Clinic "1" --> "*" Prescription : issues
+    Clinic "1" --> "*" Invoice : generates
+    Clinic "1" --> "*" Payment : receives
+
+    User "1" --> "0..1" Patient : is
+    User "1" --> "0..1" Doctor : is
+    User --> Role : has
+    User "1" --> "*" PasswordResetToken : generates
+
+    Patient "1" --> "*" Appointment : books
+    Patient "1" --> "*" Consultation : receives
+    Patient "1" --> "*" Prescription : receives
+    Patient "1" --> "*" Invoice : owes
+    Patient --> Gender : has
+
+    Doctor "1" --> "*" Appointment : attends
+    Doctor "1" --> "*" Consultation : conducts
+    Doctor "1" --> "*" Prescription : writes
+
+    Service "1" --> "*" Appointment : used_in
+    Service --> ServiceCategory : belongs_to
+
+    Appointment "1" --> "0..1" Consultation : leads_to
+    Appointment "1" --> "0..1" Invoice : generates
+    Appointment --> AppointmentStatus : has
+
+    Consultation "1" --> "*" Prescription : generates
+    Consultation --> ConsultationStatus : has
+
+    Invoice "1" --> "*" Payment : receives
+    Invoice --> InvoiceStatus : has
+
+    Payment --> PaymentMethod : uses
+    Payment --> PaymentStatus : has
+
+    InviteToken --> Role : assigns

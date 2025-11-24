@@ -1,0 +1,111 @@
+%% MedFlow - Sequence Diagram: Payment Processing
+%% Shows the interaction flow when a patient pays an invoice using Stripe
+
+sequenceDiagram
+    actor Patient
+    participant Portal as Patient Portal
+    participant Auth as Auth Service
+    participant API as API Layer
+    participant DB as Database
+    participant Stripe as Stripe API
+    participant Webhook as Stripe Webhook
+    participant Email as Email Service
+
+    Patient->>Portal: View unpaid invoices
+    Portal->>Auth: Verify authentication
+    Auth-->>Portal: Return session
+    
+    Portal->>API: GET /api/portal/invoices
+    API->>DB: Query invoices (patientId, status=PENDING)
+    DB-->>API: Return invoices list
+    API-->>Portal: Return invoices
+    Portal-->>Patient: Display invoices
+
+    Patient->>Portal: Click "Pay Invoice"
+    Portal->>API: GET /api/invoices/{id}
+    API->>DB: Query invoice details
+    DB-->>API: Return invoice data
+    API-->>Portal: Return invoice details
+    Portal-->>Patient: Display invoice details
+
+    Patient->>Portal: Click "Pay with Card"
+    Portal->>API: POST /api/payments/create-intent
+    Note over API: Validate amount & invoice
+    
+    API->>DB: Verify invoice status
+    DB-->>API: Confirm PENDING status
+    
+    API->>Stripe: Create Payment Intent
+    Note over Stripe: amount, currency, metadata
+    Stripe-->>API: Return client_secret
+    
+    API->>DB: Create payment record (status=PENDING)
+    DB-->>API: Return payment ID
+    
+    API-->>Portal: Return client_secret
+    Portal-->>Patient: Show Stripe payment form
+
+    Patient->>Portal: Enter card details
+    Portal->>Stripe: Submit payment (client-side)
+    Stripe-->>Portal: Process payment
+    
+    alt Payment Successful
+        Stripe->>Webhook: POST /api/webhooks/stripe
+        Note over Webhook: Event: payment_intent.succeeded
+        
+        Webhook->>DB: Query payment by stripePaymentIntentId
+        DB-->>Webhook: Return payment record
+        
+        Webhook->>DB: Update payment status to COMPLETED
+        DB-->>Webhook: Confirm update
+        
+        Webhook->>DB: Query invoice
+        DB-->>Webhook: Return invoice
+        
+        Webhook->>DB: Calculate total paid amount
+        DB-->>Webhook: Return sum
+        
+        alt Fully Paid
+            Webhook->>DB: Update invoice status to PAID
+        else Partially Paid
+            Webhook->>DB: Update invoice status to PARTIALLY_PAID
+        end
+        
+        DB-->>Webhook: Confirm update
+        
+        Webhook->>DB: Query patient email
+        DB-->>Webhook: Return patient info
+        
+        Webhook->>Email: Send payment receipt
+        Email->>Patient: Email receipt
+        Email-->>Webhook: Confirm sent
+        
+        Webhook-->>Stripe: Return 200 OK
+        
+        Portal->>API: GET /api/payments/{id}/status
+        API->>DB: Query payment status
+        DB-->>API: Return COMPLETED
+        API-->>Portal: Return success status
+        Portal-->>Patient: Show success message
+        
+    else Payment Failed
+        Stripe->>Webhook: POST /api/webhooks/stripe
+        Note over Webhook: Event: payment_intent.failed
+        
+        Webhook->>DB: Update payment status to FAILED
+        DB-->>Webhook: Confirm update
+        Webhook-->>Stripe: Return 200 OK
+        
+        Portal->>API: GET /api/payments/{id}/status
+        API->>DB: Query payment status
+        DB-->>API: Return FAILED
+        API-->>Portal: Return failure status
+        Portal-->>Patient: Show error message
+    end
+
+    Patient->>Portal: View updated invoices
+    Portal->>API: GET /api/portal/invoices
+    API->>DB: Query invoices
+    DB-->>API: Return updated invoices
+    API-->>Portal: Return invoices
+    Portal-->>Patient: Display paid invoice

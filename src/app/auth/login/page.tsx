@@ -40,7 +40,25 @@ export default function LoginPage() {
           title: 'Success',
           description: 'Logged in successfully',
         });
-        router.push('/dashboard');
+
+        // Resolve the user's role and redirect accordingly
+        try {
+          const resp = await fetch('/api/user');
+          if (resp.ok) {
+            const user = await resp.json();
+            if (user?.role === 'PATIENT') {
+              router.push('/portal');
+            } else {
+              router.push('/dashboard');
+            }
+          } else {
+            // fallback
+            router.push('/dashboard');
+          }
+        } catch (err) {
+          router.push('/dashboard');
+        }
+
         router.refresh();
       }
     } catch (error) {
@@ -115,6 +133,7 @@ export default function LoginPage() {
               <p className="text-xs font-semibold mb-2">Demo Accounts:</p>
               <p className="text-xs">Admin: admin@medflow.com</p>
               <p className="text-xs">Doctor: dr.smith@medflow.com</p>
+              <p className="text-xs">Recepionist: receptionist@medflow.com</p>
               <p className="text-xs">Patient: patient1@example.com</p>
               <p className="text-xs mt-1">Password: password123</p>
             </div>

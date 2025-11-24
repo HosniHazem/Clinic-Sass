@@ -8,9 +8,14 @@ export async function GET(req: NextRequest) {
     const clinicId = session.user.clinicId as string;
     const db = prismaScoped(clinicId);
 
-    // Return Doctor records (id) with nested user info so frontend selects use Doctor.id
-     const doctors = await db.raw.user.findMany({ where: { clinicId, role: 'DOCTOR' }, select: { id: true, firstName: true, lastName: true, email: true } });
-
+    // Return Doctor records with nested user info so frontend can display names
+    const doctors = await db.raw.doctor.findMany({
+      where: { clinicId },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json(doctors);
   } catch (err) {

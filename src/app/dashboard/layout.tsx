@@ -48,6 +48,7 @@ export default function DashboardLayout({
     { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
     { name: 'Patients', href: '/dashboard/patients', icon: Users, roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
     { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar, roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] },
+    { name: 'Appointments Patient', href: '/portal/appointments', icon: Calendar, roles: ['PATIENT'] },
     { name: 'Consultations', href: '/dashboard/consultations', icon: Stethoscope, roles: ['DOCTOR'] },
     { name: 'Billing', href: '/dashboard/billing', icon: DollarSign, roles: ['ADMIN', 'RECEPTIONIST'] },
     { name: 'Services', href: '/dashboard/services', icon: FileText, roles: ['ADMIN'] },

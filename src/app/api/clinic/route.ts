@@ -42,7 +42,45 @@ export async function PUT(req: NextRequest) {
     const session = await requireRole(['ADMIN']);
     const clinicId = session.user.clinicId as string;
     const db = prismaScoped(clinicId);
-    const body = await req.json();
+    
+    // Check if the request is multipart/form-data
+    const contentType = req.headers.get('content-type');
+    let body: any = {};
+    let logoData: { logo?: string } = {};
+
+    if (contentType?.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      
+      // Get the logo file if it exists
+      const logoFile = formData.get('logo') as File | null;
+      
+      // Handle file upload if a new logo is provided
+      if (logoFile && logoFile instanceof File) {
+        // In a real app, you would upload the file to a storage service here
+        // For now, we'll just store the file name
+        logoData.logo = `/${Date.now()}-${logoFile.name}`;
+      } else if (typeof logoFile === 'string') {
+        // If it's a string, it's the existing logo URL
+        logoData.logo = logoFile;
+      }
+      
+      // Get the form data
+      const formDataJson = formData.get('data');
+      if (formDataJson && typeof formDataJson === 'string') {
+        try {
+          body = JSON.parse(formDataJson);
+        } catch (e) {
+          console.error('Error parsing form data:', e);
+          return NextResponse.json(
+            { error: 'Invalid form data' },
+            { status: 400 }
+          );
+        }
+      }
+    } else {
+      // Handle regular JSON request
+      body = await req.json();
+    }
 
     const ClinicUpdateSchema = z.object({
       name: z.string().min(1, 'Clinic name is required'),
@@ -61,12 +99,20 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // Prepare update data
+    const updateData: any = {
+      ...parsed.data,
+      settings: parsed.data.settings ? JSON.stringify(parsed.data.settings) : undefined,
+    };
+
+    // Add logo data if available
+    if (logoData.logo !== undefined) {
+      updateData.logo = logoData.logo;
+    }
+
     const updatedClinic = await db.raw.clinic.update({
       where: { id: clinicId },
-      data: {
-        ...parsed.data,
-        settings: parsed.data.settings ? JSON.stringify(parsed.data.settings) : undefined,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,

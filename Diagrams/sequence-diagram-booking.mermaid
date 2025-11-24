@@ -1,0 +1,62 @@
+%% MedFlow - Sequence Diagram: Patient Books Appointment
+%% Shows the interaction flow when a patient books an appointment
+
+sequenceDiagram
+    actor Patient
+    participant Portal as Patient Portal
+    participant Auth as Auth Service
+    participant API as API Layer
+    participant DB as Database
+    participant Email as Email Service
+
+    Patient->>Portal: Navigate to book appointment
+    Portal->>Auth: Check authentication
+    Auth-->>Portal: Return session
+    
+    alt Not authenticated
+        Portal->>Patient: Redirect to login
+        Patient->>Portal: Enter credentials
+        Portal->>Auth: Authenticate
+        Auth->>DB: Verify credentials
+        DB-->>Auth: Return user data
+        Auth-->>Portal: Return session token
+    end
+
+    Patient->>Portal: View available doctors
+    Portal->>API: GET /api/doctors
+    API->>DB: Query active doctors
+    DB-->>API: Return doctors list
+    API-->>Portal: Return doctors data
+    Portal-->>Patient: Display doctors
+
+    Patient->>Portal: Select doctor & date
+    Portal->>API: GET /api/appointments/available-slots
+    API->>DB: Query existing appointments
+    DB-->>API: Return booked slots
+    API-->>Portal: Return available time slots
+    Portal-->>Patient: Display available slots
+
+    Patient->>Portal: Select time slot & service
+    Portal->>API: POST /api/appointments
+    
+    API->>Auth: Validate user & clinic
+    Auth-->>API: Return validated session
+    
+    API->>DB: Check slot availability
+    DB-->>API: Confirm slot available
+    
+    API->>DB: Create appointment
+    DB-->>API: Return appointment data
+    
+    API->>DB: Create invoice
+    DB-->>API: Return invoice data
+    
+    API->>Email: Send confirmation
+    Email-->>Patient: Email confirmation
+    Email-->>API: Confirm sent
+    
+    API-->>Portal: Return success + appointment details
+    Portal-->>Patient: Display confirmation
+
+    Patient->>Portal: View appointment details
+    Portal-->>Patient: Show appointment card
