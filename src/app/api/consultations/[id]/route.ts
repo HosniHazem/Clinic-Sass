@@ -69,12 +69,16 @@ export async function GET(req: Request, { params }: Params) {
       patientName: `${consultation.patient?.user?.firstName || ''} ${consultation.patient?.user?.lastName || ''}`.trim(),
       doctorName: `${consultation.doctor?.user?.firstName || ''} ${consultation.doctor?.user?.lastName || ''}`.trim(),
       status: consultation.status ? (String(consultation.status).toLowerCase()) : consultation.status,
+      prescriptions: (consultation.prescriptions || []).map((p: any) => ({
+        ...p,
+        medications: Array.isArray(p.medications) ? p.medications : [],
+      })),
     };
 
     return NextResponse.json({
       success: true,
       data: formattedConsultation,
-    } as ConsultationResponse);
+    } as unknown as ConsultationResponse);
   } catch (error: any) {
     console.error(`Failed to fetch consultation:`, error);
     return NextResponse.json(
@@ -152,13 +156,17 @@ export async function PATCH(req: Request, { params }: Params) {
       patientName: `${updatedConsultation.patient?.user?.firstName || ''} ${updatedConsultation.patient?.user?.lastName || ''}`.trim(),
       doctorName: `${updatedConsultation.doctor?.user?.firstName || ''} ${updatedConsultation.doctor?.user?.lastName || ''}`.trim(),
       status: updatedConsultation.status ? (String(updatedConsultation.status).toLowerCase()) : updatedConsultation.status,
+      prescriptions: (updatedConsultation.prescriptions || []).map((p: any) => ({
+        ...p,
+        medications: Array.isArray(p.medications) ? p.medications : [],
+      })),
     };
 
     return NextResponse.json({
       success: true,
       data: formattedConsultation,
       message: 'Consultation updated successfully',
-    } as ConsultationResponse);
+    } as unknown as ConsultationResponse);
   } catch (error: any) {
     console.error(`Failed to update consultation:`, error);
     return NextResponse.json(

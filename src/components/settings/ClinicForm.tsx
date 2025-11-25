@@ -207,7 +207,7 @@ export function ClinicForm() {
       };
       
       // Ensure closed days have empty strings for start/end times
-      Object.entries(formDataObj.settings.workingHours).forEach(([day, hours]) => {
+      Object.entries(formDataObj.settings.workingHours).forEach(([day, hours]: [string, any]) => {
         if (hours && typeof hours === 'object' && hours.closed) {
           formDataObj.settings.workingHours[day] = { closed: true, start: '', end: '' };
         } else if (hours && typeof hours === 'object') {

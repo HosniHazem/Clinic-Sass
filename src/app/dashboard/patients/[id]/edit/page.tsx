@@ -18,33 +18,32 @@ export default function EditPatientPage({ params }: { params: { id: string } }) 
   const [formData, setFormData] = useState<any>({});
 
   useEffect(() => {
-    fetchPatient();
-  }, [id]);
-
-  const fetchPatient = async () => {
-    try {
-      const res = await fetch(`/api/patients/${id}`);
-      if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      setFormData({
-        firstName: data.user.firstName,
-        lastName: data.user.lastName,
-        email: data.user.email,
-        phone: data.user.phone,
-        dateOfBirth: data.dateOfBirth || '',
-        gender: data.gender || '',
-        bloodType: data.bloodType || '',
-        address: data.address || '',
-        emergencyContact: data.emergencyContact || '',
-        allergies: data.allergies || '',
-        chronicConditions: data.chronicConditions || '',
-      });
-    } catch (err) {
-      toast({ title: 'Error', description: 'Failed to load patient', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const loadPatient = async () => {
+      try {
+        const res = await fetch(`/api/patients/${id}`);
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        setFormData({
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          email: data.user.email,
+          phone: data.user.phone,
+          dateOfBirth: data.dateOfBirth || '',
+          gender: data.gender || '',
+          bloodType: data.bloodType || '',
+          address: data.address || '',
+          emergencyContact: data.emergencyContact || '',
+          allergies: data.allergies || '',
+          chronicConditions: data.chronicConditions || '',
+        });
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to load patient', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPatient();
+  }, [id, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev: any) => ({ ...prev, [e.target.name]: e.target.value }));

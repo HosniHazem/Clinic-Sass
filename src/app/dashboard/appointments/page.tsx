@@ -37,25 +37,24 @@ export default function AppointmentsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchAppointments();
-  }, []);
-
-  const fetchAppointments = async () => {
-    try {
-      const response = await fetch('/api/appointments');
-      if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
-      setAppointments(data);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load appointments',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const loadAppointments = async () => {
+      try {
+        const response = await fetch('/api/appointments');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        setAppointments(data);
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load appointments',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadAppointments();
+  }, [toast]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {

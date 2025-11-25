@@ -21,7 +21,7 @@ export default function ServicesPage() {
   useEffect(() => {
     setLoading(true);
     fetch('/api/services').then((r) => r.json()).then((data) => setServices(data || [])).catch((e) => toast({ title: 'Error', description: 'Failed to load services', variant: 'destructive' })).finally(() => setLoading(false));
-  }, []);
+  }, [toast]);
 
   async function handleDelete(id: string) {
     if (!confirm('Delete service?')) return;

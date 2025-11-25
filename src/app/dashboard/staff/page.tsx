@@ -15,7 +15,7 @@ export default function StaffPage() {
   useEffect(() => {
     setLoading(true);
     fetch('/api/staff').then((r) => r.json()).then((data) => setStaff(data || [])).catch(() => toast({ title: 'Error', description: 'Failed to load staff', variant: 'destructive' })).finally(() => setLoading(false));
-  }, []);
+  }, [toast]);
 
   async function handleDelete(id: string) {
     if (!confirm('Remove staff user?')) return;

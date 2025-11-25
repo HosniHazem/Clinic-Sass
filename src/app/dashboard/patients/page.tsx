@@ -40,25 +40,24 @@ export default function PatientsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const fetchPatients = async () => {
-    try {
-      const response = await fetch('/api/patients');
-      if (!response.ok) throw new Error('Failed to fetch patients');
-      const data = await response.json();
-      setPatients(data);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load patients',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const loadPatients = async () => {
+      try {
+        const response = await fetch('/api/patients');
+        if (!response.ok) throw new Error('Failed to fetch patients');
+        const data = await response.json();
+        setPatients(data);
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load patients',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPatients();
+  }, [toast]);
 
   const filteredPatients = patients.filter(patient =>
     `${patient.user.firstName} ${patient.user.lastName}`
@@ -82,7 +81,7 @@ export default function PatientsPage() {
         description: 'Patient deleted successfully',
       });
 
-      fetchPatients();
+      setPatients(patients.filter(p => p.id !== id));
     } catch (error) {
       toast({
         title: 'Error',

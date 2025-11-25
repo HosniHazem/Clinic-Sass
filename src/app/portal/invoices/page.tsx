@@ -46,7 +46,6 @@ export default async function PortalInvoicesPage() {
                   {inv.status !== 'PAID' && (
                     // render client pay component
                     <div className="inline-block align-middle">
-                      {/* @ts-expect-error Server component can render client component */}
                       <PayInvoiceClient invoiceId={inv.id} amount={inv.total || 0} />
                     </div>
                   )}

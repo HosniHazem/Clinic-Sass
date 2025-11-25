@@ -20,39 +20,38 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
   const { id } = params;
   const [patient, setPatient] = useState<PatientDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPatient();
+    const loadPatient = async () => {
+      try {
+        const res = await fetch(`/api/patients/${id}`);
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        setPatient(data);
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to load patient', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPatient();
+  }, [id, toast]);
+
+  useEffect(() => {
+    const loadPrescriptions = async () => {
+      try {
+        const res = await fetch(`/api/prescriptions?patientId=${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setPrescriptions(data || []);
+      } catch (err) {
+        console.error('Failed to load prescriptions', err);
+      }
+    };
+    if (id) loadPrescriptions();
   }, [id]);
-
-  const fetchPatient = async () => {
-    try {
-      const res = await fetch(`/api/patients/${id}`);
-      if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      setPatient(data);
-    } catch (err) {
-      toast({ title: 'Error', description: 'Failed to load patient', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
-
-  const fetchPrescriptions = async () => {
-    try {
-      const res = await fetch(`/api/prescriptions?patientId=${id}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setPrescriptions(data || []);
-    } catch (err) {
-      console.error('Failed to load prescriptions', err);
-    }
-  };
-
-  useEffect(() => { if (id) fetchPrescriptions(); }, [id]);
 
   if (isLoading) return <div className="py-12">Loading...</div>;
   if (!patient) return <div className="py-12">Patient not found</div>;
