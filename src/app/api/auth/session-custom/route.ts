@@ -1,16 +1,17 @@
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
 /**
- * Custom session endpoint that directly calls NextAuth's auth() function
+ * Custom session endpoint that directly calls NextAuth's getServerSession function
  * This bypasses the route handler bundling issue and provides better error logging
  */
 export async function GET(request: Request) {
   try {
-    // Pass the incoming Request to auth() so it can read cookies/context
-    const session = await auth(request as any);
+    // Use getServerSession with authOptions
+    const session = await getServerSession(authOptions);
 
     if (!session) {
       // Not logged in - return empty session

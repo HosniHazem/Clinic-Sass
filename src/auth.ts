@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { getServerSession } from 'next-auth';
 import { getAuthOptionsBase } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -83,6 +83,7 @@ const authOptions = {
     async session({ session, token }: any) {
       if (session?.user) {
         session.user.role = token.role;
+        session.user.id = token.sub as string;
         session.user.clinicId = token.clinicId;
         session.user.clinicName = token.clinicName;
         session.user.patientId = token.patientId;
@@ -100,7 +101,7 @@ const authOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST, authOptions };
 
-// Export auth helper for middleware and server components
-export const auth = handler.auth;
+// Export auth helper for server components (uses getServerSession internally)
+export const auth = () => getServerSession(authOptions);

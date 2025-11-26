@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
 import { setCurrentClinic, runWithClinicTransaction } from '@/lib/db-rls';
 
 export async function getSessionServer() {
-  // auth() from NextAuth returns session details when called in server context
+  // Use getServerSession with authOptions for API routes
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     return session;
   } catch (err) {
+    console.error('Error getting session:', err);
     return null;
   }
 }
