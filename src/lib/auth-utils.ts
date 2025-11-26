@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession, Session } from 'next-auth';
 import { authOptions } from '@/auth';
 import { setCurrentClinic, runWithClinicTransaction } from '@/lib/db-rls';
 
-export async function getSessionServer() {
+export async function getSessionServer(): Promise<Session | null> {
   // Use getServerSession with authOptions for API routes
   try {
     const session = await getServerSession(authOptions);
-    return session;
+    return session as Session | null;
   } catch (err) {
     console.error('Error getting session:', err);
     return null;
   }
 }
 
-export async function requireAuth() {
+export async function requireAuth(): Promise<Session> {
   const session = await getSessionServer();
   if (!session?.user) {
     throw new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
@@ -33,13 +33,13 @@ export async function requireAuth() {
  * Convenience helper: run a callback inside a transaction with the current
  * authenticated session's clinic id set for RLS.
  */
-export async function runWithSessionClinic<T>(cb: (tx: any) => Promise<T>) {
+export async function runWithSessionClinic<T>(cb: (tx: any) => Promise<T>): Promise<T> {
   const session = await requireAuth();
   const clinicId = session.user.clinicId as string;
   return runWithClinicTransaction(clinicId, cb);
 }
 
-export async function requireRole(roles: string[] = []) {
+export async function requireRole(roles: string[] = []): Promise<Session> {
   const session = await requireAuth();
   const userRole = session.user.role as string;
   if (!roles.includes(userRole)) {

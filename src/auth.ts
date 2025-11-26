@@ -1,4 +1,4 @@
-import NextAuth, { getServerSession } from 'next-auth';
+import NextAuth, { getServerSession, NextAuthOptions } from 'next-auth';
 import { getAuthOptionsBase } from '@/lib/auth';
 import { PrismaClient } from '@prisma/client';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -20,7 +20,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
 const prisma = new PrismaClient();
 
 // Build auth options
-const authOptions = {
+const authOptions: NextAuthOptions = {
   ...getAuthOptionsBase(),
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -82,8 +82,8 @@ const authOptions = {
     },
     async session({ session, token }: any) {
       if (session?.user) {
+        session.user.id = token.sub as string; // Add user ID from token
         session.user.role = token.role;
-        session.user.id = token.sub as string;
         session.user.clinicId = token.clinicId;
         session.user.clinicName = token.clinicName;
         session.user.patientId = token.patientId;
