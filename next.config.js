@@ -14,6 +14,8 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  reactStrictMode: true,
+  swcMinify: true,
 }
 
 module.exports = nextConfig
