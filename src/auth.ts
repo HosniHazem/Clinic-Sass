@@ -31,18 +31,32 @@ export const auth = authFn;
 // Create wrapper handlers to avoid bundling issues with re-exports
 export async function GET(request: any, context: any) {
   try {
-    return await handlers.GET(request, context);
+    console.log('[Auth GET] Request received');
+    const response = await handlers.GET(request, context);
+    console.log('[Auth GET] Response status:', response?.status || 'unknown');
+    return response;
   } catch (error) {
-    console.error('Auth GET handler error:', error);
+    console.error('[Auth GET] Handler error:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Re-throw to let Vercel handle the error response
     throw error;
   }
 }
 
 export async function POST(request: any, context: any) {
   try {
-    return await handlers.POST(request, context);
+    console.log('[Auth POST] Request received');
+    const response = await handlers.POST(request, context);
+    console.log('[Auth POST] Response status:', response?.status || 'unknown');
+    return response;
   } catch (error) {
-    console.error('Auth POST handler error:', error);
+    console.error('[Auth POST] Handler error:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Re-throw to let Vercel handle the error response
     throw error;
   }
 }
