@@ -1,40 +1,39 @@
-import { auth } from "./auth";
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { auth } from '@/auth';
 
-export default auth((req: NextRequest) => {
-  const r = req as any;
-  const isLoggedIn = !!r.auth;
-  const isAuthPage = r.nextUrl.pathname.startsWith('/auth');
+export async function middleware(req: NextRequest) {
+  const session = await auth();
+  const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
+  const isLoggedIn = !!session?.user;
 
   if (isAuthPage) {
     if (isLoggedIn) {
       return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin));
     }
-    return null;
+    return NextResponse.next();
   }
 
   if (!isLoggedIn) {
     return NextResponse.redirect(new URL('/auth/login', req.nextUrl.origin));
   }
 
-  // Inject tenant (clinic) id as header so server-side API handlers
-  // and other middleware can access it without re-fetching the session.
-  const clinicId = r.auth?.user?.clinicId as string | undefined;
+  // Inject tenant (clinic) id as header
+  const clinicId = session?.user?.clinicId as string | undefined;
+  const requestHeaders = new Headers(req.headers);
+  
+  if (clinicId) {
+    requestHeaders.set('x-clinic-id', clinicId);
+  }
 
-  const res = NextResponse.next({
+  const response = NextResponse.next({
     request: {
-      // forward original headers and add our tenant header
-      headers: new Headers(r.headers),
+      headers: requestHeaders,
     },
   });
 
-  if (clinicId) {
-    res.headers.set('x-clinic-id', clinicId);
-  }
-
-  return res;
-});
+  return response;
+}
 
 export const config = {
   matcher: [
