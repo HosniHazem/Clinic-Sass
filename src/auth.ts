@@ -22,6 +22,27 @@ try {
   throw error;
 }
 
-export const { handlers, auth, signIn, signOut } = nextAuthInstance as any;
+const { handlers, auth: authFn, signIn, signOut } = nextAuthInstance as any;
 
-export const { GET, POST } = handlers as any;
+// Export auth function for server-side usage
+export { signIn, signOut };
+export const auth = authFn;
+
+// Create wrapper handlers to avoid bundling issues with re-exports
+export async function GET(request: any, context: any) {
+  try {
+    return await handlers.GET(request, context);
+  } catch (error) {
+    console.error('Auth GET handler error:', error);
+    throw error;
+  }
+}
+
+export async function POST(request: any, context: any) {
+  try {
+    return await handlers.POST(request, context);
+  } catch (error) {
+    console.error('Auth POST handler error:', error);
+    throw error;
+  }
+}

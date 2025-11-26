@@ -1,10 +1,6 @@
 // Explicitly set Node.js runtime for auth handlers
 export const runtime = 'nodejs';
 
-// Re-export the handlers created in `src/auth.ts`.
-// That file initializes NextAuth and exposes the `handlers` object
-// which already includes the `GET` and `POST` exports required by
-// the Next.js app router. Re-exporting prevents double-initialization
-// and avoids mismatched runtime shapes that can cause "r is not a function".
-
+// Import and re-export the GET and POST handlers from src/auth.ts
+// These are now wrapped functions that handle errors gracefully
 export { GET, POST } from '@/auth';
