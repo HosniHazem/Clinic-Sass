@@ -2,9 +2,10 @@ import { auth } from "./auth";
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
+export default auth((req: NextRequest) => {
+  const r = req as any;
+  const isLoggedIn = !!r.auth;
+  const isAuthPage = r.nextUrl.pathname.startsWith('/auth');
 
   if (isAuthPage) {
     if (isLoggedIn) {
@@ -19,12 +20,12 @@ export default auth((req) => {
 
   // Inject tenant (clinic) id as header so server-side API handlers
   // and other middleware can access it without re-fetching the session.
-  const clinicId = req.auth?.user?.clinicId as string | undefined;
+  const clinicId = r.auth?.user?.clinicId as string | undefined;
 
   const res = NextResponse.next({
     request: {
       // forward original headers and add our tenant header
-      headers: new Headers(req.headers),
+      headers: new Headers(r.headers),
     },
   });
 

@@ -166,7 +166,7 @@ export default function NewAppointmentPage() {
               </SelectTrigger>
               <SelectContent>
                 {doctors.map((d) => (
-                                    <SelectItem key={d.id} value={d.id}>{(d.firstName || d.email) ? `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.email : d.id}</SelectItem>
+                                    <SelectItem key={d.id} value={d.id}>{(d.user.firstName || d.user.email) ? `${d.user.firstName || ''} ${d.user.lastName || ''}`.trim() || d.user.email : d.id}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
