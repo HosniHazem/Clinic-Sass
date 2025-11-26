@@ -1,8 +1,13 @@
 import NextAuth from 'next-auth';
 import { getAuthOptionsBase } from '@/lib/auth';
+import { PrismaClient } from '@prisma/client';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcryptjs';
 
-// Use Node runtime for NextAuth handlers because Prisma, bcrypt, and
-// other server libs rely on Node APIs not available in the Edge runtime.
+// Use Node runtime for NextAuth handlers
+// because Prisma, bcrypt, and other server libs rely on Node APIs
+// not available in the Edge runtime.
 export const runtime = 'nodejs';
 
 // Validate that required secrets are set in production
@@ -12,99 +17,90 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
   );
 }
 
-// Lazy initialize NextAuth per request to avoid bundling/minification issues
-// that can occur when Node-only libraries are bundled into shared chunks.
-let nextAuthInstance: any;
-try {
-  nextAuthInstance = NextAuth(async (req) => {
-    // Dynamically import heavy/node-only dependencies inside the function
-    const [{ PrismaClient }, { PrismaAdapter }] = await Promise.all([
-      import('@prisma/client'),
-      import('@auth/prisma-adapter')
-    ]);
-    const CredentialsProvider = (await import('next-auth/providers/credentials')).default;
-    const { compare } = await import('bcryptjs');
+const prisma = new PrismaClient();
 
-    const prisma = new PrismaClient();
-
-    // Build options based on base config
-    const base = getAuthOptionsBase();
-
-    // Attach adapter
-    base.adapter = PrismaAdapter(prisma) as any;
-
-    // Create Credentials provider that uses the runtime prisma and bcrypt
-    base.providers = [
-      CredentialsProvider({
-        name: 'Credentials',
-        credentials: {
-          email: { label: 'Email', type: 'email' },
-          password: { label: 'Password', type: 'password' }
-        },
-        async authorize(credentials: any) {
-          if (!credentials?.email || !credentials?.password) {
-            return null;
-          }
-
-          try {
-            const user = await prisma.user.findUnique({
-              where: { email: credentials.email },
-              include: { clinic: true, patient: true, doctor: true }
-            });
-
-            if (!user || !user.password || !user.isActive) {
-              return null;
-            }
-
-            const isValid = await compare(credentials.password, user.password);
-            if (!isValid) return null;
-
-            return {
-              id: user.id,
-              email: user.email,
-              name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email.split('@')[0],
-              role: user.role,
-              clinicId: user.clinicId,
-              clinicName: user.clinic?.name || undefined,
-              patientId: user.patient?.id,
-              doctorId: user.doctor?.id
-            };
-          } catch (err) {
-            console.error('Credentials authorize error:', err);
-            return null;
-          }
+// Build auth options
+const authOptions = {
+  ...getAuthOptionsBase(),
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials: any) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-      })
-    ];
 
-    return base as any;
-  });
-} catch (error) {
-  console.error('Failed to initialize NextAuth (lazy):', error);
-  throw error;
-}
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            include: { clinic: true, patient: true, doctor: true }
+          });
 
-const { handlers, auth: authFn, signIn, signOut } = nextAuthInstance as any;
+          if (!user || !user.password || !user.isActive) {
+            return null;
+          }
 
-// Export auth function for server-side usage
-export { signIn, signOut };
-export const auth = authFn;
+          const isValid = await compare(credentials.password, user.password);
+          if (!isValid) return null;
 
-// Delegate GET/POST to handlers (wrapped to log)
-export async function GET(request: any, context: any) {
-  try {
-    return await handlers.GET(request, context);
-  } catch (error) {
-    console.error('[Auth GET] Handler error:', error);
-    throw error;
-  }
-}
+          return {
+            id: user.id,
+            email: user.email,
+            name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email.split('@')[0],
+            role: user.role,
+            clinicId: user.clinicId,
+            clinicName: user.clinic?.name || undefined,
+            patientId: user.patient?.id,
+            doctorId: user.doctor?.id
+          };
+        } catch (err) {
+          console.error('Credentials authorize error:', err);
+          return null;
+        }
+      }
+    })
+  ],
+  // Add any additional NextAuth options here
+  session: {
+    strategy: 'jwt',
+  },
+  callbacks: {
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.role = user.role;
+        token.clinicId = user.clinicId;
+        token.clinicName = user.clinicName;
+        token.patientId = user.patientId;
+        token.doctorId = user.doctorId;
+      }
+      return token;
+    },
+    async session({ session, token }: any) {
+      if (session?.user) {
+        session.user.role = token.role;
+        session.user.clinicId = token.clinicId;
+        session.user.clinicName = token.clinicName;
+        session.user.patientId = token.patientId;
+        session.user.doctorId = token.doctorId;
+      }
+      return session;
+    }
+  },
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+  },
+  debug: process.env.NODE_ENV === 'development',
+};
 
-export async function POST(request: any, context: any) {
-  try {
-    return await handlers.POST(request, context);
-  } catch (error) {
-    console.error('[Auth POST] Handler error:', error);
-    throw error;
-  }
-}
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+
+// Export auth helper for middleware and server components
+export const auth = handler.auth;

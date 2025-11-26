@@ -1,11 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { auth } from '@/auth';
 
 export async function middleware(req: NextRequest) {
-  const session = await auth();
+  // Use getToken instead of auth() to work in Edge runtime
+  const token = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+  
   const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
-  const isLoggedIn = !!session?.user;
+  const isLoggedIn = !!token;
 
   if (isAuthPage) {
     if (isLoggedIn) {
@@ -19,7 +23,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Inject tenant (clinic) id as header
-  const clinicId = session?.user?.clinicId as string | undefined;
+  const clinicId = token?.clinicId as string | undefined;
   const requestHeaders = new Headers(req.headers);
   
   if (clinicId) {
