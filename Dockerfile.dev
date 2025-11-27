@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+RUN apk add --no-cache libc6-compat openssl
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including dev)
+RUN npm ci
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Copy application code
+COPY . .
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["npm", "run", "dev"]
